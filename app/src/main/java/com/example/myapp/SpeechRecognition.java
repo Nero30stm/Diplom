@@ -42,12 +42,14 @@ public class SpeechRecognition extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_speech_recognition);
 
+        String packageName = getIntent().getStringExtra("packageName");
+
         ImageView imageView = (ImageView) findViewById(R.id.imageView);
         imageView.setBackgroundResource(R.drawable.m2);
 
         mAnimationDrawable = (AnimationDrawable) imageView.getBackground();
         mAnimationDrawable.start();
-        fileName = Environment.getExternalStorageDirectory() + "/record.3gpp";
+        fileName = Environment.getExternalStorageDirectory() + "/" + packageName + ".3gpp";
         //recording();
     }
     public void recordStart(View v) {

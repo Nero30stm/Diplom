@@ -2,112 +2,67 @@ package com.example.myapp;
 
 import java.util.List;
 
-import java.io.File;
-import java.net.URI;
-import java.lang.Object;
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.os.Environment;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.Button;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.content.Intent;
-import android.app.Service;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.widget.Toast;
 
-public class AppListAdapter extends BaseAdapter {
+public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
 
-    private List<ApplicationInfo> packages;
-    private LayoutInflater inflater;
-    private PackageManager pm;
-    MediaPlayer mPlayer;
+    private List <ApplicationInfo> appList = null;
+    private Context context;
+    private PackageManager packageManager;
 
-    public AppListAdapter(Context context, PackageManager pm, List<ApplicationInfo> packages) {
-        this.packages = packages;
-        this.pm = pm;
+    public AppListAdapter(Context context, int resource,
+                      List objects) {
+        super(context, resource, objects);
 
-        inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.context = context;
+        this.appList = objects;
+        packageManager = context.getPackageManager();
     }
 
     @Override
     public int getCount() {
-        return packages.size();
+        return ((null != appList) ? appList.size() : 0);
     }
 
     @Override
-    public ApplicationInfo getItem(int p1) {
-
-        return packages.get(p1);
+    public ApplicationInfo getItem(int position) {
+        return ((null != appList) ? appList.get(position) : null);
     }
 
     @Override
-    public long getItemId(int p1) {
-
-        return p1;
+    public long getItemId(int position) {
+        return position;
     }
 
     @Override
-    public View getView(int position, View v, ViewGroup parent) {
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View view = convertView;
 
-        View view = null;
-        ViewHolder viewHolder;
-
-        if (v == null) {
-            viewHolder = new ViewHolder();
-            view = inflater.inflate(R.layout.app_list_item, parent, false);
-            viewHolder.tvAppLabel = (TextView) view
-                    .findViewById(R.id.app_item_text);
-            viewHolder.ivAppIcon = (ImageView) view
-                    .findViewById(R.id.app_item_image);
-            view.setTag(viewHolder);
-        } else {
-            view = v;
-            viewHolder = (ViewHolder) view.getTag();
+        if(null == view) {
+            LayoutInflater layoutInflater = (LayoutInflater) context
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            view = layoutInflater.inflate(R.layout.app_item, null);
         }
 
-        ApplicationInfo app = packages.get(position);
+        ApplicationInfo data = appList.get(position);
 
-        viewHolder.tvAppLabel.setText(app.loadLabel(pm).toString());
-        viewHolder.ivAppIcon.setImageDrawable(app.loadIcon(pm));
-        String source = new String(app.packageName);
-        viewHolder.packegName = source;
-        //viewHolder.tvAppLabel.setText(source);
-        viewHolder.fileName += app.loadLabel(pm).toString();
+        if(null != data) {
+            TextView appName = (TextView) view.findViewById(R.id.app_name);
+            TextView packageName = (TextView) view.findViewById(R.id.app_package);
+            ImageView iconView = (ImageView) view.findViewById(R.id.app_icon);
 
-        /*viewHolder.app_item_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });*/
-
+            appName.setText(data.loadLabel(packageManager));
+            packageName.setText(data.packageName);
+            iconView.setImageDrawable(data.loadIcon(packageManager));
+        }
         return view;
-    }
-
-    public static class ViewHolder {
-       // final Button app_item_button;
-        private TextView tvAppLabel;
-        private ImageView ivAppIcon;
-        public String packegName;
-        public String fileName = Environment.getExternalStorageDirectory() + "";
-      /*  ViewHolder(View view){
-            app_item_button = (Button) view.findViewById(R.id.app_item_button);
-        }*/
     }
 }

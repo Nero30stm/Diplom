@@ -7,37 +7,36 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import java.util.List;
-import android.media.MediaRecorder;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
+import android.app.ListActivity;
+import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.content.Intent;
-import android.app.Service;
-import android.app.Activity;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import java.io.File;
+import android.os.AsyncTask;
 import android.view.View;
 import android.widget.ListView;
-import android.media.MediaPlayer;
 import android.widget.Toast;
-import android.app.Activity;
-import android.media.MediaPlayer;
+
+import java.util.ArrayList;
 import android.media.MediaRecorder;
-import android.os.Bundle;
-import android.os.Environment;
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
+import android.support.v4.app.NotificationCompat;
+import android.app.Service;
+import android.app.Activity;
+import java.io.File;
+import android.media.MediaPlayer;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ListActivity {
 
-    private ListView appList;
+    //private ListView appList;
+
+    private PackageManager packageManager = null;
+    private List <ApplicationInfo> applist = null;
+    private AppListAdapter listadapter = null;
+
     private MediaRecorder mediaRecorder;
     private MediaPlayer mediaPlayer;
     private String fileName;
@@ -51,33 +50,100 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        appList = (ListView) findViewById(R.id.appList);
+       // appList = (ListView) findViewById(R.id.appList);
 
-        PackageManager pm = getPackageManager();
-        List<ApplicationInfo> packages = pm
-                .getInstalledApplications(PackageManager.GET_META_DATA);
+        //PackageManager pm = getPackageManager();
+        //List<ApplicationInfo> packages = pm
+          //      .getInstalledApplications(PackageManager.GET_META_DATA);
 
-        AppListAdapter appListAdapter = new AppListAdapter(this, pm, packages);
-        appList.setAdapter(appListAdapter);
-        
+        //AppListAdapter appListAdapter = new AppListAdapter(this, pm, packages);
+        //appList.setAdapter(appListAdapter);
+
+
+
+
+
+        packageManager = getPackageManager();
+
+        new LoadApplications().execute();
 
         nm = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         showNotification();
 
     }
 
-    public void onMyButtonClick(View view)
-    {
-        //intent.putExtra("name", name.getText().toString());
 
-        /*Intent sendIntent = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
 
-        if (sendIntent != null) {
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(sendIntent);
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        ApplicationInfo app = applist.get(position);
+
+
+        Intent intent = new Intent(this, SpeechRecognition.class);
+        intent.putExtra("packageName", app.packageName);
+        startActivity(intent);
+       /* try{
+            Intent intent = packageManager.getLaunchIntentForPackage(app.packageName);
+
+            if(intent != null) {
+                startActivity(intent);
+            }
+        } catch(ActivityNotFoundException e) {
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+        } catch(Exception e) {
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }*/
 
     }
+
+    private List <ApplicationInfo> checkForLaunchIntent(List <ApplicationInfo> list) {
+
+        ArrayList <ApplicationInfo> appList = new ArrayList <ApplicationInfo> ();
+
+        for(ApplicationInfo info : list) {
+            try{
+                if(packageManager.getLaunchIntentForPackage(info.packageName) != null) {
+                    appList.add(info);
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return appList;
+    }
+
+    private class LoadApplications extends AsyncTask<Void, Void, Void> {
+
+        private ProgressDialog progress = null;
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            applist = checkForLaunchIntent(packageManager.getInstalledApplications(PackageManager.GET_META_DATA));
+
+            listadapter = new AppListAdapter(MainActivity.this, R.layout.app_item, applist);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            setListAdapter(listadapter);
+            progress.dismiss();
+            super.onPostExecute(result);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progress = ProgressDialog.show(MainActivity.this, null, "Loading apps info...");
+            super.onPreExecute();
+        }
+    }
+
 
     public void showNotification () {
         Notification.Builder builder = new Notification.Builder(getApplicationContext());
