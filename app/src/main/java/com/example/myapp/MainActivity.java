@@ -4,7 +4,11 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.graphics.Color;
 import android.app.PendingIntent;
 import java.util.List;
 import android.app.ListActivity;
@@ -17,10 +21,9 @@ import android.os.AsyncTask;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
-
+import android.support.v4.app.TaskStackBuilder;
 import java.util.ArrayList;
 import android.media.MediaRecorder;
-import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
@@ -28,11 +31,14 @@ import android.app.Service;
 import android.app.Activity;
 import java.io.File;
 import android.media.MediaPlayer;
+import android.app.NotificationChannel;
+
+import fft.*;
 
 public class MainActivity extends ListActivity {
 
     //private ListView appList;
-
+    private RealDoubleFFT transformer;
     private PackageManager packageManager = null;
     private List <ApplicationInfo> applist = null;
     private AppListAdapter listadapter = null;
@@ -44,6 +50,7 @@ public class MainActivity extends ListActivity {
     private static final int NOTIFY_ID = 101;
     private NotificationManager nm;
     MediaRecorder myAudioRecorder = new MediaRecorder();
+    String CHANNEL_ID = "processing_test.notifications";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +74,9 @@ public class MainActivity extends ListActivity {
 
         new LoadApplications().execute();
 
-        nm = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        showNotification();
+        //nm = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        Intent notificationIntent = new Intent(this, RecognationStart.class);
+        showNotification2(this, "jhjk", "jhjh,m", notificationIntent);
 
     }
 
@@ -145,10 +153,74 @@ public class MainActivity extends ListActivity {
     }
 
 
+
+
+    public void showNotification2(Context context, String title, String body, Intent intent) {
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        int notificationId = 1;
+        String channelId = "channel-01";
+        String channelName = "Channel Name";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel mChannel = new NotificationChannel(
+                    channelId, channelName, importance);
+            notificationManager.createNotificationChannel(mChannel);
+        }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(body);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+        stackBuilder.addNextIntent(intent);
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(
+                0,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        mBuilder.setContentIntent(resultPendingIntent);
+
+        notificationManager.notify(notificationId, mBuilder.build());
+    }
+    //*/
+
+
+
+
+
+
+
     public void showNotification () {
-        Notification.Builder builder = new Notification.Builder(getApplicationContext());
+
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "My channel",
+                    NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("My channel description");
+            channel.enableLights(true);
+            //channel.setLightColor(Color.RED);
+            channel.enableVibration(false);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
+        Intent notificationIntent = new Intent(this, RecognationStart.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this,0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        builder.setContentIntent(contentIntent)
+                        .setSmallIcon(R.drawable.ic_mic)
+                        .setContentTitle("Title")
+                        .setContentText("Notification text");
+
+
+        /*Notification.Builder builder = new Notification.Builder(getApplicationContext());
         //Intent notificationIntent = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
-        Intent notificationIntent = new Intent(this, SpeechRecognition.class);
+        Intent notificationIntent = new Intent(this, RecognationStart.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this,0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         builder.setContentIntent(contentIntent)
                 // обязательные настройки
@@ -168,7 +240,7 @@ public class MainActivity extends ListActivity {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // Альтернативный вариант
         // NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        nm.notify(NOTIFY_ID, builder.build());
+        nm.notify(NOTIFY_ID, builder.build());*/
     }
 }
 
